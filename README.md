@@ -1,53 +1,53 @@
 # ironmark
 
-Visualizador de Markdown liviano, rápido, seguro y de **solo lectura** (sin editor), escrito en Rust, con soporte completo de **Mermaid 100% offline** para **Linux, macOS y Windows**.
+Lightweight, fast, secure, **read-only** Markdown viewer (no editor), written in Rust, with full **100% offline Mermaid** support for **Linux, macOS, and Windows**.
 
-## Características
+## Features
 
-- **Solo lectura, cero editor**: abre archivos `.md` al instante sin bloating ni Electron (usa el WebView nativo del sistema vía `tao` + `wry`).
-- **Renderizado seguro (defensa en profundidad)**:
-  - Parseo de CommonMark + GFM (tablas, task lists, notas al pie, tachado, slugs de encabezados) con `pulldown-cmark`.
-  - Sanitización HTML estricta en Rust con `ammonia` (elimina `<script>`, `<iframe>`, `<svg>`, `<style>`, `<form>`, atributos `on*`, URLs `javascript:` / `vbscript:` / `file:` / `data:`).
-  - Protocolo personalizado `ironmark://` (sin abrir puertos locales) con cabecera HTTP `Content-Security-Policy` estricta (`script-src 'self'`, `object-src 'none'`, `frame-src 'none'`).
-  - Imágenes locales relativas servidas desde `/local/*` con verificación de ruta canónica dentro del directorio del documento (sin *path traversal*) y `Content-Security-Policy: sandbox`.
-  - Navegación externa bloqueada dentro del WebView; enlaces `http(s)://` / `mailto:` se abren en el navegador del sistema y enlaces relativos a otros `.md` se abren directamente en `ironmark`.
-- **Mermaid 100% offline**: `mermaid.min.js` embebido en el binario (comprimido con gzip, sin CDN) ejecutándose con `securityLevel: 'strict'`. Haz clic en cualquier diagrama para expandirlo y hacer zoom.
-- **Privacidad offline por defecto (imágenes remotas opcionales)**: las imágenes `http(s)://` se bloquean por defecto tanto en la sanitización como en la CSP. Se pueden habilitar opcionalmente con `--allow-remote` o desde el botón **Offline** en la barra superior.
-- **Recarga automática en disco**: observa el archivo abierto (incluyendo guardados atómicos de Vim, VS Code, Helix, etc.) y actualiza el DOM sin parpadeos manteniendo la posición de scroll.
-- **Arrastrar y soltar + Diálogo nativo + CLI**: abre archivos desde terminal, arrastrándolos a la ventana o con `Cmd/Ctrl+O`.
-- **Modo claro / oscuro**: sigue el tema del sistema automáticamente con selector manual (`Auto` / `Light` / `Dark`) que también re-renderiza los diagramas Mermaid.
+- **Read-only, zero editor**: opens `.md` files instantly without bloat or Electron (uses the OS native WebView via `tao` + `wry`).
+- **Secure rendering (defense in depth)**:
+  - CommonMark + GFM parsing (tables, task lists, footnotes, strikethrough, heading slugs) with `pulldown-cmark`.
+  - Strict HTML sanitization in Rust with `ammonia` (strips `<script>`, `<iframe>`, `<svg>`, `<style>`, `<form>`, `on*` attributes, and `javascript:` / `vbscript:` / `file:` / `data:` URLs).
+  - Custom `ironmark://` protocol (no open local ports) with a strict `Content-Security-Policy` header (`script-src 'self'`, `object-src 'none'`, `frame-src 'none'`).
+  - Relative local images served from `/local/*` with canonical path verification inside the document directory (no path traversal) and `Content-Security-Policy: sandbox`.
+  - External navigation blocked inside the WebView; `http(s)://` / `mailto:` links open in the system browser and relative links to other `.md` files open directly in `ironmark`.
+- **100% offline Mermaid**: `mermaid.min.js` embedded in the binary (gzip-compressed, no CDN) running with `securityLevel: 'strict'`. Click any diagram to expand and zoom.
+- **Offline privacy by default (optional remote images)**: `http(s)://` images are blocked by default in both sanitization and CSP. You can optionally enable them with `--allow-remote` or from the **Offline** button in the top bar.
+- **Auto-reload on disk**: watches the open file (including atomic saves from Vim, VS Code, Helix, etc.) and updates the DOM without flicker while preserving scroll position.
+- **Drag & drop + Native dialog + CLI**: open files from the terminal, by dragging them onto the window, or with `Cmd/Ctrl+O`.
+- **Light / Dark mode**: automatically follows the system theme with a manual selector (`Auto` / `Light` / `Dark`) that also re-renders Mermaid diagrams.
 
-## Uso
+## Usage
 
 ```bash
-# Abrir un archivo Markdown
+# Open a Markdown file
 ironmark README.md
 
-# Abrir permitiendo imágenes remotas http(s)
+# Open allowing remote http(s) images
 ironmark --allow-remote README.md
 
-# Abrir ventana vacía (para arrastrar o elegir archivo)
+# Open an empty window (to drag & drop or pick a file)
 ironmark
 ```
 
-### Atajos de teclado
+### Keyboard Shortcuts
 
-| Atajo | Acción |
+| Shortcut | Action |
 | :--- | :--- |
-| `Cmd/Ctrl + O` | Abrir archivo `.md` |
-| `Cmd/Ctrl + F` | Buscar en el documento |
-| `Cmd/Ctrl + R` | Recargar manualmente |
+| `Cmd/Ctrl + O` | Open `.md` file |
+| `Cmd/Ctrl + F` | Find in document |
+| `Cmd/Ctrl + R` | Reload manually |
 | `Cmd/Ctrl + +` / `-` / `0` | Zoom in / out / 100% |
-| `Cmd/Ctrl + Q` | Salir |
-| `Esc` | Cerrar búsqueda o modal de diagrama |
+| `Cmd/Ctrl + Q` | Quit |
+| `Esc` | Close search or diagram modal |
 
-## Compilación
+## Building
 
-### Requisitos del sistema
+### System Requirements
 
-- **macOS**: Xcode Command Line Tools (`WKWebView` incluido en el SO).
-- **Windows**: MSVC toolchain + WebView2 Runtime (incluido en Windows 10/11).
-- **Linux**: GTK 3 y WebKitGTK:
+- **macOS**: Xcode Command Line Tools (`WKWebView` included in the OS).
+- **Windows**: MSVC toolchain + WebView2 Runtime (included in Windows 10/11).
+- **Linux**: GTK 3 and WebKitGTK:
   - Debian / Ubuntu:
     ```bash
     sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
@@ -61,26 +61,26 @@ ironmark
     sudo pacman -S gtk3 webkit2gtk-4.1
     ```
 
-### Build optimizado (release)
+### Optimized Build (Release)
 
 ```bash
 cargo build --release
 ```
 
-El binario compilado queda en `target/release/ironmark` (`target\release\ironmark.exe` en Windows).
+The compiled binary is placed at `target/release/ironmark` (`target\release\ironmark.exe` on Windows).
 
-### Probar con el archivo de ejemplo
+### Try with the Example File
 
 ```bash
 cargo run -- examples/demo.md
 ```
 
-## Contribuciones
+## Contributing
 
-Las contribuciones son bienvenidas. Consultá [CONTRIBUTING.md](CONTRIBUTING.md) para ver cómo compilar, correr los tests y enviar pull requests.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on building, running tests, and submitting pull requests.
 
-## Licencia y terceros
+## License and Third-Party Notices
 
-`ironmark` se distribuye bajo la licencia [MIT](LICENSE).
+`ironmark` is distributed under the [MIT](LICENSE) license.
 
-Los avisos de licencias de terceros (incluido el bundle offline de Mermaid con versión y hash SHA-256) están documentados en [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Third-party license notices (including the offline Mermaid bundle with version and SHA-256 hash) are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
