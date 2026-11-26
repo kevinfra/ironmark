@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: tar.gz
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            archive: tar.gz
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux WebView dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --locked --release --target ${{ matrix.target }}
+
+      - name: Package archive (Unix)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PKG_NAME="ironmark-${TAG}-${{ matrix.target }}"
+          mkdir -p "dist/${PKG_NAME}"
+          cp "target/${{ matrix.target }}/release/ironmark" "dist/${PKG_NAME}/"
+          cp LICENSE README.md THIRD_PARTY_NOTICES.md "dist/${PKG_NAME}/"
+          tar -C dist -czf "${PKG_NAME}.tar.gz" "${PKG_NAME}"
+          shasum -a 256 "${PKG_NAME}.tar.gz" > "${PKG_NAME}.tar.gz.sha256"
+
+      - name: Package archive (Windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $pkgName = "ironmark-$tag-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path "dist/$pkgName" | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/ironmark.exe" "dist/$pkgName/"
+          Copy-Item "LICENSE", "README.md", "THIRD_PARTY_NOTICES.md" "dist/$pkgName/"
+          Compress-Archive -Path "dist/$pkgName/*" -DestinationPath "$pkgName.zip"
+          $hash = (Get-FileHash -Algorithm SHA256 "$pkgName.zip").Hash.ToLower()
+          "$hash  $pkgName.zip" | Out-File -Encoding ascii "$pkgName.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: |
+            *.tar.gz
+            *.tar.gz.sha256
+            *.zip
+            *.zip.sha256
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*
