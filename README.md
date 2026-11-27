@@ -1,48 +1,52 @@
 # ironmark
 
-Lightweight, fast, secure, **read-only** Markdown viewer (no editor), written in Rust, with full **100% offline Mermaid** support for **Linux, macOS, and Windows**.
+**A fast, secure, read-only Markdown viewer with fully offline Mermaid support.**
+
+[![CI](https://github.com/kevinfra/ironmark/actions/workflows/ci.yml/badge.svg)](https://github.com/kevinfra/ironmark/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/kevinfra/ironmark)](https://github.com/kevinfra/ironmark/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)
+
+![ironmark screenshot](assets/screenshot.png)
+
+Written in Rust, no Electron, no editor. Open a `.md` file and read it.
+
+## Quick start
+
+```bash
+brew install kevinfra/tap/ironmark   # macOS; see "Installation" for other platforms
+ironmark README.md
+```
 
 ## Features
 
-- **Read-only, zero editor**: opens `.md` files instantly without bloat or Electron (uses the OS native WebView via `tao` + `wry`).
-- **Secure rendering (defense in depth)**:
-  - CommonMark + GFM parsing (tables, task lists, footnotes, strikethrough, heading slugs) with `pulldown-cmark`.
-  - Strict HTML sanitization in Rust with `ammonia` (strips `<script>`, `<iframe>`, `<svg>`, `<style>`, `<form>`, `on*` attributes, and `javascript:` / `vbscript:` / `file:` / `data:` URLs).
-  - Custom `ironmark://` protocol (no open local ports) with a strict `Content-Security-Policy` header (`script-src 'self'`, `object-src 'none'`, `frame-src 'none'`).
-  - Relative local images served from `/local/*` with canonical path verification inside the document directory (no path traversal) and `Content-Security-Policy: sandbox`.
-  - External navigation blocked inside the WebView; `http(s)://` / `mailto:` links open in the system browser and relative links to other `.md` files open directly in `ironmark`.
-- **100% offline Mermaid**: `mermaid.min.js` embedded in the binary (gzip-compressed, no CDN) running with `securityLevel: 'strict'`. Click any diagram to expand and zoom.
-- **Offline privacy by default (optional remote images)**: `http(s)://` images are blocked by default in both sanitization and CSP. You can optionally enable them with `--allow-remote` or from the **Offline** button in the top bar.
-- **Auto-reload on disk**: watches the open file (including atomic saves from Vim, VS Code, Helix, etc.) and updates the DOM without flicker while preserving scroll position.
-- **Drag & drop + Native dialog + CLI**: open files from the terminal, by dragging them onto the window, or with `Cmd/Ctrl+O`.
-- **Light / Dark mode**: automatically follows the system theme with a manual selector (`Auto` / `Light` / `Dark`) that also re-renders Mermaid diagrams.
+- **Instant and lightweight**: uses your OS native WebView instead of bundling a browser.
+- **Full Markdown support**: CommonMark + GFM (tables, task lists, footnotes, strikethrough).
+- **Mermaid diagrams, 100% offline**: bundled in the binary, no CDN. Click a diagram to expand and zoom.
+- **Live reload**: updates automatically when the file changes on disk, keeping your scroll position.
+- **Light / Dark mode**: follows the system theme, with a manual `Auto` / `Light` / `Dark` switch.
+- **Easy to open files**: from the terminal, by drag & drop, or with `Cmd/Ctrl + O`.
+- **Private by default**: remote images are blocked unless you opt in (see [Security](#security)).
 
 ## Installation
 
-### macOS (Homebrew)
-
-```bash
-brew install kevinfra/tap/ironmark
-```
-
-### Prebuilt Binaries
-
-Download the latest release archive for macOS, Linux, or Windows from [GitHub Releases](https://github.com/kevinfra/ironmark/releases).
+| Platform | Command |
+| :--- | :--- |
+| **macOS** | `brew install kevinfra/tap/ironmark` |
+| **Linux / Windows / macOS** | Download a prebuilt binary from [GitHub Releases](https://github.com/kevinfra/ironmark/releases) |
+| **From source** | `cargo install --git https://github.com/kevinfra/ironmark` (see [Build from source](#build-from-source)) |
 
 ## Usage
 
 ```bash
-# Open a Markdown file
-ironmark README.md
-
-# Open allowing remote http(s) images
-ironmark --allow-remote README.md
-
-# Open an empty window (to drag & drop or pick a file)
-ironmark
+ironmark README.md                  # open a file
+ironmark --allow-remote README.md   # also load remote http(s) images
+ironmark                            # empty window: drag & drop or press Cmd/Ctrl+O
 ```
 
-### Keyboard Shortcuts
+Want to try it right away? Open the bundled demo: `ironmark examples/demo.md`.
+
+### Keyboard shortcuts
 
 | Shortcut | Action |
 | :--- | :--- |
@@ -53,11 +57,23 @@ ironmark
 | `Cmd/Ctrl + Q` | Quit |
 | `Esc` | Close search or diagram modal |
 
-## Building
+## Security
 
-### System Requirements
+ironmark is designed to be safe to open untrusted Markdown files:
 
-- **macOS**: Xcode Command Line Tools (`WKWebView` included in the OS).
+- **Strict sanitization** with `ammonia`: strips `<script>`, `<iframe>`, `<svg>`, `<style>`, `<form>`, `on*` attributes, and `javascript:` / `vbscript:` / `file:` / `data:` URLs.
+- **Custom `ironmark://` protocol**: no local network ports are opened. A strict `Content-Security-Policy` is enforced (`script-src 'self'`, `object-src 'none'`, `frame-src 'none'`).
+- **Safe local images**: relative images are served only from inside the document directory (canonical path check, no path traversal) with `Content-Security-Policy: sandbox`.
+- **Controlled navigation**: navigation inside the WebView is blocked. `http(s)://` and `mailto:` links open in your system browser, and relative links to other `.md` files open in ironmark.
+- **Offline by default**: remote images are blocked in both sanitization and CSP. Enable them with `--allow-remote` or the **Offline** button in the top bar.
+- **Mermaid** runs with `securityLevel: 'strict'`.
+
+## Build from source
+
+<details>
+<summary>System requirements</summary>
+
+- **macOS**: Xcode Command Line Tools (`WKWebView` is included in the OS).
 - **Windows**: MSVC toolchain + WebView2 Runtime (included in Windows 10/11).
 - **Linux**: GTK 3 and WebKitGTK:
   - Debian / Ubuntu:
@@ -73,25 +89,19 @@ ironmark
     sudo pacman -S gtk3 webkit2gtk-4.1
     ```
 
-### Optimized Build (Release)
+</details>
 
 ```bash
 cargo build --release
 ```
 
-The compiled binary is placed at `target/release/ironmark` (`target\release\ironmark.exe` on Windows).
-
-### Try with the Example File
-
-```bash
-cargo run -- examples/demo.md
-```
+The binary is placed at `target/release/ironmark` (`target\release\ironmark.exe` on Windows).
 
 ## Contributing
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on building, running tests, and submitting pull requests.
 
-## License and Third-Party Notices
+## License and third-party notices
 
 `ironmark` is distributed under the [MIT](LICENSE) license.
 
