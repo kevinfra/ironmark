@@ -17,6 +17,18 @@ Lightweight, fast, secure, **read-only** Markdown viewer (no editor), written in
 - **Drag & drop + Native dialog + CLI**: open files from the terminal, by dragging them onto the window, or with `Cmd/Ctrl+O`.
 - **Light / Dark mode**: automatically follows the system theme with a manual selector (`Auto` / `Light` / `Dark`) that also re-renders Mermaid diagrams.
 
+## Installation
+
+### macOS (Homebrew)
+
+```bash
+brew install kevinfra/tap/ironmark
+```
+
+### Prebuilt Binaries
+
+Download the latest release archive for macOS, Linux, or Windows from [GitHub Releases](https://github.com/kevinfra/ironmark/releases).
+
 ## Usage
 
 ```bash
