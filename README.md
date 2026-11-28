@@ -36,6 +36,19 @@ ironmark README.md
 | **Linux / Windows / macOS** | Download a prebuilt binary from [GitHub Releases](https://github.com/kevinfra/ironmark/releases) |
 | **From source** | `cargo install --git https://github.com/kevinfra/ironmark` (see [Build from source](#build-from-source)) |
 
+<details>
+<summary>macOS: Open <code>.md</code> files from Finder or with <code>open file.md</code></summary>
+
+Wrap the installed binary in `/Applications/Ironmark.app` so macOS Launch Services can associate `.md` files with it:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kevinfra/ironmark/master/scripts/install-macos-app.sh | bash
+```
+
+Then right-click any `.md` file → **Get Info** → **Open with** → **Ironmark** → **Change All...** (or run `brew install duti && duti -s com.kevinfra.ironmark .md all`).
+
+</details>
+
 ## Usage
 
 ```bash
